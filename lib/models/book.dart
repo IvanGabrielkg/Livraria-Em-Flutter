@@ -26,20 +26,20 @@ class Book {
   factory Book.fromJson(Map<String, dynamic> json) {
     return Book(
       id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      author: json['author'] ?? '',
+      title: json['title'] ?? 'Título indisponível',
+      author: json['author'] ?? 'Autor desconhecido',
       publisher: json['publisher'] ?? '',
       price: (json['price'] ?? 0).toDouble(),
       stock: json['stock'] ?? 0,
       imgUrl: json['imgUrl'] ?? '',
-      description: json['description'] ?? '',
-      category: json['category'] ?? '',
+      description: json['description'] ?? 'Sem descrição',
+      category: json['category'] ?? 'Sem categoria',
       release: json['release'] ?? '',
     );
   }
 
-  /// Apenas se ainda estiver usando campos customizados (ex: desconto local)
-  double get discountedPrice => price; // placeholder até integrar promoções
+  // Getter para manter compatibilidade com código antigo que usava imageUrl
+  double get discountedPrice => price;
   String get imageUrl => imgUrl;
 }
 
