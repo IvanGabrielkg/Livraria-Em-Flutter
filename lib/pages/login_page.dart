@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
         child: Stack(
           children: [
 
-            // Fundo decorativo
+
             SizedBox(
               height: topHeight,
               width: double.infinity,
@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: const _CirclePattern(),
               ),
             ),
-            // Botão de voltar
+
             Positioned(
               top: 12,
               left: 12,
@@ -82,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // Logo
+
             Positioned(
               top: topHeight * 0.25,
               left: 0,
@@ -106,18 +106,18 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            // Formulário
+
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                // altura automática -> permite rolagem sem esconder campos
+
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(28, 140, 28, 32),
-                  // OBS: 140 cobre a área atrás da logo. Ajuste se quiser subir/descer.
+
                   child: Form(
                     key: _formKey,
                     child: Column(

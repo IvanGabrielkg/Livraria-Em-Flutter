@@ -20,7 +20,6 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _message;
   bool _obscure = true;
 
-  // Paleta e estilos compartilhados (igual LoginPage simplificada)
   static const Color primaryBg = Color(0xFF6366F1);
   static const Color circlesColor = Color(0xFF1E2633);
   static const Color fieldFill = Color(0xFFD9D9D9);
@@ -62,7 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Fundo decorativo
+
             SizedBox(
               height: topHeight,
               width: double.infinity,
@@ -71,7 +70,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: _CirclePattern(),
               ),
             ),
-            // Botão de voltar
+
             Positioned(
               top: 12,
               left: 12,
@@ -86,7 +85,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
 
-            // Logo / Ícone
             Positioned(
               top: topHeight * 0.25,
               left: 0,
@@ -110,7 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
             ),
-            // Formulário
+
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(

@@ -32,9 +32,19 @@ class _ProfilePageState extends State<ProfilePage> {
     String? email = widget.email;
 
     if (logged && (name == null || email == null)) {
-      final claims = await _auth.decodeLocalTokenClaims();
-      name = name ?? claims?['name'] ?? claims?['username'] ?? claims?['sub'];
-      email = email ?? claims?['email'] ?? claims?['sub'];
+      // Tenta perfil do backend primeiro
+      final profile = await _auth.fetchProfile();
+      if (profile != null) {
+        name = name ?? profile['name'];
+        email = email ?? profile['email'];
+      }
+
+      // Fallback no JWT (claims locais)
+      if (name == null || email == null) {
+        final claims = await _auth.decodeLocalTokenClaims();
+        name = name ?? claims?['name'] ?? claims?['username']; // REMOVIDO sub
+        email = email ?? claims?['email'] ?? claims?['sub'];   // sub apenas para email
+      }
     }
 
     setState(() {

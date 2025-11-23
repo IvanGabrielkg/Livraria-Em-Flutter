@@ -5,9 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book.dart';
 
 class BookService {
-  /// Ajuste automático do host conforme plataforma:
-  /// - Android emulator: 10.0.2.2
-  /// - iOS/desktop/web local: localhost
+
   static String resolveBaseUrl() {
     try {
       if (Platform.isAndroid) {
@@ -33,8 +31,6 @@ class BookService {
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
-
-  // ---------------- Livros ----------------
 
   Future<List<Book>> fetchBooks() async {
     final uri = Uri.parse('$baseUrl/books');
@@ -69,13 +65,6 @@ class BookService {
       );
     }
   }
-
-  // ---------------- Wishlist ----------------
-  // Endpoints assumidos:
-  // POST /addwishlist/{bookId}
-  // GET  /wishlist
-  // DELETE /wishlist/{bookId}
-  // Ajuste se seu backend usar /api/... ou outro nome.
 
   Future<List<Book>> fetchWishlist() async {
     final token = await _getToken();
@@ -126,7 +115,6 @@ class BookService {
     }
   }
 
-  // Helper local (opcional) se quiser verificar rapidamente
   Future<bool> isInWishlist(int bookId) async {
     final list = await fetchWishlist();
     return list.any((b) => b.id == bookId);

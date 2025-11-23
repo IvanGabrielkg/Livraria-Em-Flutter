@@ -4,103 +4,69 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  /// Base URL principal do módulo de auth.
-  /// Ajuste conforme seu ambiente. Se não passar nada no construtor, tenta deduzir.
-  final String baseUrl;
+  final String baseUrl; // normalmente termina com /auth
 
   AuthService({String? baseUrl})
       : baseUrl = baseUrl ?? _defaultBaseUrl();
 
-  /// Escolhe um baseUrl padrão conforme plataforma:
-  /// - Android emulator: 10.0.2.2
-  /// - iOS simulator / Web local: localhost
-  /// Ajuste para o IP da máquina na rede se estiver testando em dispositivo físico.
   static String _defaultBaseUrl() {
     try {
-      if (Platform.isAndroid) {
-        // Para emulador Android acessar o host local
-        return 'http://10.0.2.2:8080/auth';
-      }
-      // iOS simulator, desktop, web (quando rodando via `flutter run -d chrome`)
+      if (Platform.isAndroid) return 'http://10.0.2.2:8080/auth';
       return 'http://localhost:8080/auth';
     } catch (_) {
-      // Se Platform não disponível (ex: compilação web sem dart:io)
       return 'http://localhost:8080/auth';
     }
   }
 
-  Map<String, String> get _jsonHeaders => {
+  // Deriva a raiz sem /auth para acessar /user ou outros endpoints fora do módulo auth.
+  String get _rootBaseUrl =>
+      baseUrl.replaceFirst(RegExp(r'/auth/?$'), '');
+
+  Map<String, String> get _jsonHeaders => const {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
 
-  /// Registra usuário utilizando campo 'name' (necessário para evitar ConstraintViolation).
   Future<String?> register(String name, String email, String password) async {
     final uri = Uri.parse('$baseUrl/register');
-
     try {
       final response = await http
-          .post(
-        uri,
-        headers: _jsonHeaders,
-        body: jsonEncode({
-          'name': name,
-          'email': email,
-          'password': password,
-        }),
-      )
+          .post(uri,
+          headers: _jsonHeaders,
+          body: jsonEncode({'name': name, 'email': email, 'password': password}))
           .timeout(const Duration(seconds: 12));
 
-      final status = response.statusCode;
-      final body = response.body;
-
-      print('[AuthService.register] status=$status body=$body');
-
-      if (status == 200 || status == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return 'Usuário cadastrado com sucesso!';
-      } else {
-        return _parseErrorMessage(body, fallback: 'Erro ao registrar usuário. Código: $status');
       }
+      return _parseErrorMessage(response.body,
+          fallback: 'Erro ao registrar usuário. Código: ${response.statusCode}');
     } catch (e) {
       print('[AuthService.register] exception: $e');
       return 'Falha de conexão. Tente novamente.';
     }
   }
 
-  /// Login: retorna token (JWT) ou null.
   Future<String?> login(String email, String password) async {
     final uri = Uri.parse('$baseUrl/login');
-
     try {
       final response = await http
-          .post(
-        uri,
-        headers: _jsonHeaders,
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      )
+          .post(uri,
+          headers: _jsonHeaders,
+          body: jsonEncode({'email': email, 'password': password}))
           .timeout(const Duration(seconds: 12));
 
-      final status = response.statusCode;
-      final body = response.body;
-
-      print('[AuthService.login] status=$status body=$body');
-
-      if (status == 200) {
-        final json = jsonDecode(body);
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
         final token = json['token'] as String?;
         if (token != null && token.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('jwt_token', token);
           print('[AuthService.login] token salvo.');
           return token;
-        } else {
-          print('[AuthService.login] resposta sem token.');
         }
       } else {
-        print('[AuthService.login] falha status=$status');
+        print('[AuthService.login] status=${response.statusCode} body=${response.body}');
       }
       return null;
     } catch (e) {
@@ -112,7 +78,6 @@ class AuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
-    // Se tiver refresh token, remova também.
     print('[AuthService.logout] token removido.');
   }
 
@@ -126,56 +91,91 @@ class AuthService {
     return t != null && t.isNotEmpty;
   }
 
-  /// Tenta buscar dados do usuário logado. Ajuste se seu backend usar rota diferente (/api/auth/me).
+  /// Tenta múltiplas rotas para obter perfil:
+  /// 1. /auth/me
+  /// 2. /auth/user (caso você crie)
+  /// 3. /user (fora do /auth)
+  /// Aceita JSON {"name": "...", "email": "..."} ou string simples (nome).
   Future<Map<String, dynamic>?> fetchProfile() async {
     final token = await getToken();
     if (token == null) return null;
 
-    final uri = Uri.parse('$baseUrl/me');
-
-    try {
-      final response = await http
-          .get(
-        uri,
-        headers: {
+    Future<Map<String, dynamic>?> tryEndpoint(String url) async {
+      final uri = Uri.parse(url);
+      try {
+        final response = await http
+            .get(uri, headers: {
           ..._jsonHeaders,
           'Authorization': 'Bearer $token',
-        },
-      )
+        })
+            .timeout(const Duration(seconds: 10));
+
+        print('[AuthService.fetchProfile] GET $url status=${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          final body = response.body.trim();
+          if (body.isEmpty) return null;
+          if (body.startsWith('{') && body.endsWith('}')) {
+            final decoded = jsonDecode(body);
+            if (decoded is Map<String, dynamic>) return decoded;
+          }
+          // caso retorne apenas o nome como texto
+          return {'name': body};
+        } else if (response.statusCode == 401 || response.statusCode == 403) {
+          // bloqueado ou não autorizado — retorna null sem lançar
+          return null;
+        }
+      } catch (e) {
+        print('[AuthService.fetchProfile] exception em $url: $e');
+      }
+      return null;
+    }
+
+    // Tenta em ordem
+    return await tryEndpoint('$baseUrl/me') ??
+        await tryEndpoint('$baseUrl/user') ?? // caso mapeie dentro de /auth
+        await tryEndpoint('$_rootBaseUrl/user');
+  }
+
+  /// Endpoint direto /user (apenas se quiser chamar explicitamente)
+  Future<Map<String, dynamic>?> fetchUser() async {
+    final token = await getToken();
+    if (token == null) return null;
+    final uri = Uri.parse('$_rootBaseUrl/user');
+    try {
+      final response = await http
+          .get(uri, headers: {
+        ..._jsonHeaders,
+        'Authorization': 'Bearer $token',
+      })
           .timeout(const Duration(seconds: 10));
 
-      final status = response.statusCode;
-      final body = response.body;
+      print('[AuthService.fetchUser] status=${response.statusCode} body=${response.body}');
 
-      print('[AuthService.fetchProfile] status=$status body=$body');
-
-      if (status == 200) {
-        final json = jsonDecode(body);
-        if (json is Map<String, dynamic>) return json;
-      } else {
-        print('[AuthService.fetchProfile] erro status=$status');
+      if (response.statusCode == 200) {
+        final body = response.body.trim();
+        if (body.startsWith('{') && body.endsWith('}')) {
+          final decoded = jsonDecode(body);
+          if (decoded is Map<String, dynamic>) return decoded;
+        }
+        return {'name': body};
       }
       return null;
     } catch (e) {
-      print('[AuthService.fetchProfile] exception: $e');
+      print('[AuthService.fetchUser] exception: $e');
       return null;
     }
   }
 
-  /// Decodifica localmente o payload do JWT (não valida assinatura).
-  /// Útil como fallback se /me não existir.
   Future<Map<String, dynamic>?> decodeLocalTokenClaims() async {
     final token = await getToken();
     if (token == null) return null;
-
     try {
       final parts = token.split('.');
       if (parts.length != 3) return null;
-
       final payloadSegment = _normalizeBase64(parts[1]);
       final decoded = utf8.decode(base64Url.decode(payloadSegment));
       final map = jsonDecode(decoded);
-
       return map is Map<String, dynamic> ? map : null;
     } catch (e) {
       print('[AuthService.decodeLocalTokenClaims] exception: $e');
@@ -183,57 +183,20 @@ class AuthService {
     }
   }
 
-  /// Ponto futuro para refresh token (se o backend expuser /auth/refresh).
-  /// Exemplo (placeholder):
-  /*
-  Future<String?> refreshToken() async {
-    final refresh = await _getRefreshToken();
-    if (refresh == null) return null;
-
-    final uri = Uri.parse('$baseUrl/refresh');
-    try {
-      final response = await http.post(
-        uri,
-        headers: _jsonHeaders,
-        body: jsonEncode({'refreshToken': refresh}),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final newToken = json['token'];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', newToken);
-        return newToken;
-      }
-    } catch (e) {
-      print('[AuthService.refreshToken] exception: $e');
-    }
-    return null;
-  }
-  */
-
-  // ----------------- Métodos privados utilitários -----------------
-
   String _parseErrorMessage(String body, {required String fallback}) {
     try {
       final json = jsonDecode(body);
       if (json is Map) {
-        // tenta várias chaves possíveis
         for (final key in ['message', 'error', 'detail']) {
           final val = json[key];
-          if (val is String && val.trim().isNotEmpty) {
-            return val;
-          }
+          if (val is String && val.trim().isNotEmpty) return val;
         }
       }
-    } catch (_) {
-      // ignore parse errors
-    }
+    } catch (_) {}
     return fallback;
   }
 
   String _normalizeBase64(String input) {
-    // Corrige padding faltante
     final pad = (4 - input.length % 4) % 4;
     return input + ('=' * pad);
   }

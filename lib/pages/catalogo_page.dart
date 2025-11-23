@@ -13,9 +13,7 @@ class CatalogoPage extends StatefulWidget {
 
 class _CatalogoPageState extends State<CatalogoPage> {
   Future<List<Book>> fetchBooks() async {
-    // AJUSTE: se estiver no Android Emulator substitua localhost por 10.0.2.2
-    // iOS Simulator -> 127.0.0.1
-    // Dispositivo físico -> IP da máquina na rede (ex: 192.168.0.10)
+
     final uri = Uri.parse('http://localhost:8080/books');
 
     final response = await http.get(uri);

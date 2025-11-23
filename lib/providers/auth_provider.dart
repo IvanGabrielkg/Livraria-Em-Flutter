@@ -32,14 +32,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> register(String name, String email, String password) async {
     final msg = await _auth.register(name, email, password);
-    // Não loga automaticamente — ajuste se quiser.
+
     notifyListeners();
-    // Retorna a mensagem para UI
-  }
+   }
 
   Future<void> loadProfile() async {
     _profile = await _auth.fetchProfile();
-    // fallback para claims locais se /me não existir
+
     _profile ??= await _auth.decodeLocalTokenClaims();
     notifyListeners();
   }

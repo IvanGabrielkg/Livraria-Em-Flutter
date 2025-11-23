@@ -72,7 +72,7 @@ class BookDetailPage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Título + Autor
+
             Text(
               book.title,
               style: const TextStyle(
@@ -91,7 +91,7 @@ class BookDetailPage extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // Ícones extra (share + wishlist estado atual)
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -138,7 +138,7 @@ class BookDetailPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Descrição
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
@@ -162,7 +162,7 @@ class BookDetailPage extends StatelessWidget {
 
             const SizedBox(height: 25),
 
-            // Botões: Comprar + Wishlist (substitui Carrinho)
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(

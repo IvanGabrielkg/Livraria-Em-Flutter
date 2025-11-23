@@ -62,7 +62,7 @@ class _MainPageState extends State<MainPage> {
       appBar: AppBar(
         backgroundColor: Colors.indigoAccent,
         elevation: 0,
-        // Faz o ícone do drawer (hamburger) e outros ícones ficarem brancos
+
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Livraria', style: TextStyle(color: Colors.white)),
         actions: [
@@ -176,7 +176,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   Drawer _buildDrawer(int cartCount) {
-    // Drawer restaurada ao estilo anterior (header escuro)
+
     return Drawer(
       child: Column(
         children: [
@@ -211,8 +211,8 @@ class _MainPageState extends State<MainPage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.favorite), // Ícone de coração
-            title: const Text('Lista de Desejos'), // Novo título
+            leading: const Icon(Icons.favorite),
+            title: const Text('Lista de Desejos'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -249,7 +249,6 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-/// -------------------- StableScrollBody (corrigido) --------------------
 class _StableScrollBody extends StatefulWidget {
   final List<Map<String, dynamic>> categories;
   final bool isLoggedIn;
@@ -283,7 +282,7 @@ class _StableScrollBodyState extends State<_StableScrollBody> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BookProvider>();
-    final books = provider.books ?? []; // proteção contra nulo
+    final books = provider.books ?? [];
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -297,7 +296,6 @@ class _StableScrollBodyState extends State<_StableScrollBody> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: _SearchBar(
                 onSubmitted: (query) {
-                  // TODO: implementar filtro
                   print('Pesquisar: $query');
                 },
               ),
@@ -328,7 +326,7 @@ class _StableScrollBodyState extends State<_StableScrollBody> {
                 child: Center(child: Text('Nenhum livro disponível.')),
               )
             else
-            // Cada seção é um SliverToBoxAdapter com um ListView horizontal fixado em altura.
+
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                       (context, sectionIndex) {
@@ -449,7 +447,6 @@ class _BookHorizontalSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cabeçalho
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

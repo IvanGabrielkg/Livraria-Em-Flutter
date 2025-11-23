@@ -58,7 +58,7 @@ class CartPage extends StatelessWidget {
             ),
           ),
 
-          // Total e botão de compra
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
