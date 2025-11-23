@@ -1,6 +1,6 @@
-# Livraria em Flutter - Demo
+# Livraria em Flutter - Projeto/Demo
 
-A new Flutter project.
+Projeto feito usando Flutter + Spring Boot pontuado na faculdade, sendo esse o front end feito em Flutter/Dart.
 
 ## Getting Started
 
